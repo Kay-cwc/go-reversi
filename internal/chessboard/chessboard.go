@@ -9,6 +9,7 @@ import (
 type Chessboard struct {
 	dimension uint
 	board     [][]string // 0 represent unfilled
+	Score     [2]uint
 }
 
 const ChessDefault string = "-"
@@ -43,9 +44,11 @@ func InitChessboard(dimension uint) Chessboard {
 	// by default, {33, 34, 43, 44} will be filled
 	board[4][4], board[5][5] = ChessPlayer1, ChessPlayer1
 	board[4][5], board[5][4] = ChessPlayer2, ChessPlayer2
+	Score := [2]uint{2, 2}
 	return Chessboard{
 		dimension,
 		board,
+		Score,
 	}
 }
 
@@ -81,19 +84,23 @@ func findSurroundingCells(chessboard *Chessboard, chess string, cell [2]uint, ch
 	for {
 		nextCell := moveCell(cell, change)
 		if !isInBound(nextCell, chessboard.dimension) {
+			// at the edge of chessboard already, still can't find a chess by the current player.
+			// surrounding is not formed, should not flip
+			surroundingCells = make([][2]uint, 0, 8) // empty the array
 			break
 		}
 
 		currentFill := chessboard.board[nextCell[1]][nextCell[0]]
 		if currentFill == chess {
-			// find an ending cell that is placed by the current player. valid adjacent cell
-			surroundingCells = append(surroundingCells, nextCell)
+			// found a cell filled by the current player, a surrounding is formed. chess between should be flipped
 			break
 		} else if currentFill == ChessDefault {
-			// no ending cell is placed by the current player. invalid adjacent cell
+			// cannot find a cell filled by the current player, cell between should not be flipped
+			surroundingCells = make([][2]uint, 0, 8) // empty the array
 			break
 		}
 		// is filled by opponent, continue the path and search
+		surroundingCells = append(surroundingCells, nextCell)
 		cell = nextCell
 	}
 	return surroundingCells
@@ -102,7 +109,6 @@ func findSurroundingCells(chessboard *Chessboard, chess string, cell [2]uint, ch
 // check all the surrounding chess of the potential move
 // only return those cells that is in bound and it filled by opponents
 func IsAdjacentToOpponent(chessboard *Chessboard, chess string, move [2]uint) [][2]uint {
-	fmt.Println(chess, move)
 	// first move +- xy by 1, then +- yx by 1
 	var adjacentCells = make([][2]uint, 0, 8)
 
@@ -119,7 +125,6 @@ func IsAdjacentToOpponent(chessboard *Chessboard, chess string, move [2]uint) []
 				continue
 			}
 
-			fmt.Println(adjacentCell, currentFill, chess)
 			// extends from the potential move to all surrounding cells and beyond
 			// find the straight path that has a cell occupied by self
 			surroundingCells := findSurroundingCells(chessboard, chess, move, change)
@@ -142,16 +147,53 @@ type UserMove struct {
 // handle player move on chessboard. this function does not check if the rules comply the game rules
 func Move(chessboard *Chessboard, chess string, userMove UserMove) {
 	chessboard.board[userMove.Move[1]][userMove.Move[0]] = chess
-	fmt.Println(userMove.AdjacentCells)
+	flipCount := 0
+	// Print(chessboard)
 	// flip all surroundingCells
 	for _, adjacentCell := range userMove.AdjacentCells {
-		chessboard.board[adjacentCell[1]][adjacentCell[0]] = chess
+		// chessboard.board[adjacentCell[1]][adjacentCell[0]] = chess
 		change := [2]int{int(adjacentCell[0]) - int(userMove.Move[0]), int(adjacentCell[1]) - int(userMove.Move[1])}
+
+		// flip all surrounding cell
 		surroundingCells := findSurroundingCells(chessboard, chess, userMove.Move, change)
-		fmt.Println(surroundingCells)
 		for _, surroundingCell := range surroundingCells {
 			chessboard.board[surroundingCell[1]][surroundingCell[0]] = chess
 		}
+		flipCount += len(surroundingCells)
+	}
+
+	// update the score. +1 to represent the newly added chess
+	if chess == ChessPlayer1 {
+		chessboard.Score[0] += uint(flipCount) + 1
+		chessboard.Score[1] -= uint(flipCount)
+	} else {
+		chessboard.Score[0] -= uint(flipCount)
+		chessboard.Score[1] += uint(flipCount) + 1
+	}
+}
+
+func PrintScore(chessboard *Chessboard) {
+	fmt.Printf("(%s)%d : %d(%s)\n", ChessPlayer1, chessboard.Score[0], chessboard.Score[1], ChessPlayer2)
+}
+
+func IsGameOver(chessboard *Chessboard) (bool, string) {
+	// condition
+	// 1. one side is 0
+	// 2. all cells are filled
+	player1 := chessboard.Score[0]
+	player2 := chessboard.Score[1]
+
+	isOver := player1 == 0 || player2 == 0 || player1+player2 == chessboard.dimension*chessboard.dimension
+	if !isOver {
+		return false, ChessDefault
+	}
+
+	if player1 > player2 {
+		return true, ChessPlayer1
+	} else if player2 > player1 {
+		return true, ChessPlayer2
+	} else {
+		return true, ChessDefault
 	}
 }
 

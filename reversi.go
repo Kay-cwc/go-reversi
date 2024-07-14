@@ -21,5 +21,14 @@ func main() {
 	for {
 		gameController.Move(&game)
 		chessboard.Print(&game.Chessboard)
+		gameOver, winner := chessboard.IsGameOver(&game.Chessboard)
+		if gameOver {
+			chessboard.PrintScore(&game.Chessboard)
+			if winner == chessboard.ChessDefault {
+				fmt.Println("Draw Game")
+			} else {
+				fmt.Printf("Player %s won!", winner)
+			}
+		}
 	}
 }
