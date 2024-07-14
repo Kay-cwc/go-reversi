@@ -18,16 +18,33 @@ const chessPlayer1 string = "X"
 const chessPlayer2 string = "O"
 
 func initChessboard(dimension uint) Chessboard {
-	board := make([][]string, dimension)
-	for row := range dimension {
-		board[row] = make([]string, dimension)
-		for col := range dimension {
+	board := make([][]string, dimension+1)
+
+	for row := range dimension + 1 {
+		// special handling for the first row as the column indices (not for playing)
+		if row == 0 {
+			colIndices := make([]string, dimension+1)
+			colIndices[0] = " "
+			for i := uint64(0); i < uint64(dimension); i++ {
+				colIndices[i+1] = strconv.FormatUint(i+1, 10)
+			}
+			board[row] = colIndices
+			continue
+		}
+		// fill the rest of the chessboard
+		// the first col of each row will be used as the row indices
+		board[row] = make([]string, dimension+1)
+		for col := range dimension + 1 {
+			if col == 0 {
+				board[row][col] = strconv.FormatUint(uint64(row), 10)
+				continue
+			}
 			board[row][col] = chessDefault
 		}
 	}
 	// by default, {33, 34, 43, 44} will be filled
-	board[3][3], board[4][4] = chessPlayer1, chessPlayer1
-	board[3][4], board[4][3] = chessPlayer2, chessPlayer2
+	board[4][4], board[5][5] = chessPlayer1, chessPlayer1
+	board[4][5], board[5][4] = chessPlayer2, chessPlayer2
 	return Chessboard{
 		dimension,
 		board,
@@ -41,28 +58,10 @@ func printRowString(row []string) {
 // print the chessboard in a readable format
 // 0,1,2 will be parsed as string "-", "X", "O" for display
 func printChessboard(chessboard *Chessboard) {
-	dimension := chessboard.dimension
-	// col indices
-	// +1 because we need to reserve space for the row index
-	colIndices := make([]string, dimension+1)
-	colIndices[0] = " "
-	for i := uint64(0); i < uint64(dimension); i++ {
-		fmt.Println(i)
-		colIndices[i+1] = strconv.FormatUint(i+1, 10)
-	}
-	fmt.Println(colIndices)
-	printRowString(colIndices)
-
-	for row := range dimension {
+	// dimension+1 as the board's xy are + 1 to contain the indices
+	for row := range chessboard.dimension + 1 {
 		rowVal := chessboard.board[row]
-		// rowDisplay := make([]string, dimension+1)
-		// rowDisplay[0] = strconv.FormatUint(uint64(row+1), 10)
-		rowDisplay := []string{strconv.FormatUint(uint64(row+1), 10)}
-		rowDisplay = append(rowDisplay, rowVal...)
-		// for col := range dimension {
-		// 	rowDisplay[col+1] = displayValMap[rowVal[col]]
-		// }
-		printRowString(rowDisplay)
+		printRowString(rowVal)
 	}
 }
 
@@ -114,7 +113,7 @@ func validateUserMovePrompt(v string) ([]uint, string, bool) {
 	targets := strings.Split(v, ",")
 	output := make([]uint, 2)
 	if len(targets) != 2 {
-		return output, "Invalid input", false
+		return output, "Invalid input", true
 	}
 	var hasErr bool
 	var errMsg string
@@ -150,7 +149,7 @@ func userMove(game *Game) {
 	move := prompt(q, validateUserMovePrompt)
 	// update state
 	game.player1 = !game.player1
-	game.chessboard.board[move[1]-1][move[0]-1] = chess
+	game.chessboard.board[move[1]][move[0]] = chess
 }
 
 func main() {
