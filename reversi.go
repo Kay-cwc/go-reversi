@@ -67,7 +67,7 @@ func printChessboard(chessboard *Chessboard) {
 
 type validatePromptResp[O uint | []uint] func(string) (O, string, bool)
 
-func prompt[O uint | []uint](q string, validate validatePromptResp[O]) O {
+func prompt[O uint | []uint](q string, validateFuncs []validatePromptResp[O]) O {
 	var ans string
 	r := bufio.NewReader(os.Stdin)
 	for {
@@ -76,13 +76,14 @@ func prompt[O uint | []uint](q string, validate validatePromptResp[O]) O {
 		if ans != "" {
 			ans = strings.TrimSpace(ans)
 			// should perform validation here
-			output, errorMsg, validationError := validate(ans)
-			if validationError {
-				fmt.Println(errorMsg)
-				continue
+			for _, validateFunc := range validateFuncs {
+				output, errorMsg, validationError := validateFunc(ans)
+				if validationError {
+					fmt.Println(errorMsg)
+					continue
+				}
+				return output
 			}
-			// break when user type something
-			return output
 		}
 	}
 }
@@ -98,7 +99,10 @@ type Game struct {
 }
 
 func initGame() Game {
-	dimension := prompt[uint]("tell me the dimension of the chessboard (default=8)", isUintString)
+	dimension := prompt(
+		"tell me the dimension of the chessboard (default=8)",
+		[]validatePromptResp[uint]{isUintString},
+	)
 	chessboard := initChessboard(dimension)
 	fmt.Println("New Game Started!")
 	printChessboard(&chessboard)
@@ -146,7 +150,7 @@ func userMove(game *Game) {
 		chess = chessPlayer2
 	}
 	q := fmt.Sprintf("Player %s's move (input your move in x,y format):", playerName)
-	move := prompt(q, validateUserMovePrompt)
+	move := prompt(q, []validatePromptResp[[]uint]{validateUserMovePrompt})
 	// update state
 	game.player1 = !game.player1
 	game.chessboard.board[move[1]][move[0]] = chess
