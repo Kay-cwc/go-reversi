@@ -19,7 +19,7 @@ func main() {
 
 	game := gameController.InitGame()
 	for {
-		gameController.UserMove(&game)
+		gameController.Move(&game)
 		chessboard.Print(&game.Chessboard)
 	}
 }
