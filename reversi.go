@@ -10,30 +10,28 @@ import (
 
 type Chessboard struct {
 	dimension uint
-	board     [][]uint // 0 represent unfilled
+	board     [][]string // 0 represent unfilled
 }
 
+const chessDefault string = "-"
+const chessPlayer1 string = "X"
+const chessPlayer2 string = "O"
+
 func initChessboard(dimension uint) Chessboard {
-	board := make([][]uint, dimension)
+	board := make([][]string, dimension)
 	for row := range dimension {
-		board[row] = make([]uint, dimension)
+		board[row] = make([]string, dimension)
 		for col := range dimension {
-			board[row][col] = 0
+			board[row][col] = chessDefault
 		}
 	}
 	// by default, {33, 34, 43, 44} will be filled
-	board[3][3], board[4][4] = 1, 1
-	board[3][4], board[4][3] = 2, 2
+	board[3][3], board[4][4] = chessPlayer1, chessPlayer1
+	board[3][4], board[4][3] = chessPlayer2, chessPlayer2
 	return Chessboard{
 		dimension,
 		board,
 	}
-}
-
-var displayValMap = map[uint]string{
-	0: "-",
-	1: "X",
-	2: "O",
 }
 
 func printRowString(row []string) {
@@ -57,11 +55,13 @@ func printChessboard(chessboard *Chessboard) {
 
 	for row := range dimension {
 		rowVal := chessboard.board[row]
-		rowDisplay := make([]string, dimension+1)
-		rowDisplay[0] = strconv.FormatUint(uint64(row+1), 10)
-		for col := range dimension {
-			rowDisplay[col+1] = displayValMap[rowVal[col]]
-		}
+		// rowDisplay := make([]string, dimension+1)
+		// rowDisplay[0] = strconv.FormatUint(uint64(row+1), 10)
+		rowDisplay := []string{strconv.FormatUint(uint64(row+1), 10)}
+		rowDisplay = append(rowDisplay, rowVal...)
+		// for col := range dimension {
+		// 	rowDisplay[col+1] = displayValMap[rowVal[col]]
+		// }
 		printRowString(rowDisplay)
 	}
 }
@@ -127,6 +127,8 @@ func validateUserMovePrompt(v string) ([]uint, string, bool) {
 		return output, errMsg, hasErr
 	}
 	// the value should be between 1-8
+	// should be dynamic later for the chessboard dimension
+	// maybe return a closure here
 	if output[0] == 0 || output[0] > 8 {
 		return output, "x must be between 1-8", true
 	}
@@ -139,18 +141,16 @@ func validateUserMovePrompt(v string) ([]uint, string, bool) {
 
 func userMove(game *Game) {
 	playerName := "Player 1"
+	chess := chessPlayer1
 	if !game.player1 {
 		playerName = "Player 2"
+		chess = chessPlayer2
 	}
 	q := fmt.Sprintf("Player %s's move (input your move in x,y format):", playerName)
 	move := prompt(q, validateUserMovePrompt)
 	// update state
-	player := uint(1)
-	if !game.player1 {
-		player = 2
-	}
 	game.player1 = !game.player1
-	game.chessboard.board[move[1]-1][move[0]-1] = player
+	game.chessboard.board[move[1]-1][move[0]-1] = chess
 }
 
 func main() {
