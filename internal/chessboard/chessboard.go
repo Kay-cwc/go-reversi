@@ -59,15 +59,10 @@ func Print(chessboard *Chessboard) {
 	}
 }
 
-func Move(chessboard *Chessboard, chess string, move []uint) {
-	// think about it later on how to handle this error
-	if len(move) != 2 {
-		panic("invalid chess move")
-	}
-	// check the move is not out of bound
-	if move[0] == 0 || move[1] == 0 || move[0] > chessboard.dimension || move[1] > chessboard.dimension {
-		panic("chess move out of bound")
-	}
+// func IsAdjacentToOpponent() {}
+
+// handle player move on chessboard. this function does not check if the rules comply the game rules
+func Move(chessboard *Chessboard, chess string, move [2]uint) {
 	chessboard.board[move[1]][move[0]] = chess
 }
 

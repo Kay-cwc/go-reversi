@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-type ValidatePromptResp[O uint | []uint] func(string) (O, string, bool)
+type ValidatePromptResp[O uint | [2]uint] func(string) (O, string, bool)
 
-func Ask[O uint | []uint](q string, validateFuncs []ValidatePromptResp[O]) O {
+func Ask[O uint | [2]uint](q string, validateFunc ValidatePromptResp[O]) O {
 	var ans string
 	r := bufio.NewReader(os.Stdin)
 	for {
@@ -18,15 +18,12 @@ func Ask[O uint | []uint](q string, validateFuncs []ValidatePromptResp[O]) O {
 		if ans != "" {
 			ans = strings.TrimSpace(ans)
 			// should perform validation here
-			for _, validateFunc := range validateFuncs {
-				output, errorMsg, validationError := validateFunc(ans)
-				if validationError {
-					fmt.Println(errorMsg)
-					break
-				}
-				return output
+			output, errorMsg, validationError := validateFunc(ans)
+			if validationError {
+				fmt.Println(errorMsg)
+				continue
 			}
-			continue
+			return output
 		}
 	}
 }
