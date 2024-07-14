@@ -80,10 +80,11 @@ func prompt[O uint | []uint](q string, validateFuncs []validatePromptResp[O]) O 
 				output, errorMsg, validationError := validateFunc(ans)
 				if validationError {
 					fmt.Println(errorMsg)
-					continue
+					break
 				}
 				return output
 			}
+			continue
 		}
 	}
 }
