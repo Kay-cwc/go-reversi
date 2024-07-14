@@ -8,7 +8,7 @@ import (
 )
 
 type Game struct {
-	player1    bool
+	player     string
 	Chessboard chessboard.Chessboard
 }
 
@@ -23,7 +23,7 @@ func InitGame() Game {
 
 	return Game{
 		Chessboard: board,
-		player1:    true,
+		player:     chessboard.ChessPlayer1,
 	}
 }
 
@@ -32,21 +32,32 @@ func InitGame() Game {
 func isValidMove(game *Game) func(v string) ([2]uint, string, bool) {
 	return func(v string) ([2]uint, string, bool) {
 		userMove, errMsg, hasErr := parser.ValidateUserMoveInput(v)
-
+		isValidMove := chessboard.IsAdjacentToOpponent(&game.Chessboard, game.player, userMove)
+		if !isValidMove {
+			errMsg = "Invalid Move"
+			hasErr = true
+		}
 		return userMove, errMsg, hasErr
 	}
 }
 
+func isPlayer1(player string) bool {
+	return player != chessboard.ChessPlayer1
+}
+
 func UserMove(game *Game) {
 	playerName := "Player 1"
-	chess := chessboard.ChessPlayer1
-	if !game.player1 {
+	if isPlayer1(game.player) {
 		playerName = "Player 2"
-		chess = chessboard.ChessPlayer2
 	}
 	q := fmt.Sprintf("Player %s's move (input your move in x,y format):", playerName)
 	move := prompt.Ask(q, isValidMove(game))
 	// update state
-	game.player1 = !game.player1
-	chessboard.Move(&game.Chessboard, chess, move)
+	chessboard.Move(&game.Chessboard, game.player, move)
+
+	if isPlayer1(game.player) {
+		game.player = chessboard.ChessPlayer2
+	} else {
+		game.player = chessboard.ChessPlayer1
+	}
 }

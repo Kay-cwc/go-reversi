@@ -59,7 +59,41 @@ func Print(chessboard *Chessboard) {
 	}
 }
 
-// func IsAdjacentToOpponent() {}
+var adjacent_def = [3]int{-1, 0, 1}
+
+func moveCell(cell [2]uint, changes [2]int) [2]uint {
+	x := uint(changes[0] + int(cell[0]))
+	y := uint(changes[1] + int(cell[1]))
+
+	return [2]uint{x, y}
+}
+
+func isInBound(cell [2]uint, dimension uint) bool {
+	return cell[0] > 0 && cell[0] <= dimension && cell[1] > 0 && cell[1] <= dimension
+}
+
+func IsAdjacentToOpponent(chessboard *Chessboard, chess string, move [2]uint) bool {
+	// first move +- xy by 1, then +- yx by 1
+	var adjacentCells = make([][2]uint, 0, 8)
+
+	for _, changeX := range adjacent_def {
+		for _, changeY := range adjacent_def {
+			adjacentCell := moveCell(move, [2]int{changeX, changeY})
+			if !isInBound(adjacentCell, chessboard.dimension) {
+				continue
+			}
+			// check if it is filled by opponent
+			currentFill := chessboard.board[adjacentCell[0]][adjacentCell[1]]
+			if currentFill == chess || currentFill == ChessDefault {
+				continue
+			}
+
+			adjacentCells = append(adjacentCells, adjacentCell)
+		}
+	}
+
+	return len(adjacentCells) > 0
+}
 
 // handle player move on chessboard. this function does not check if the rules comply the game rules
 func Move(chessboard *Chessboard, chess string, move [2]uint) {
