@@ -10,6 +10,8 @@ func IsUintString(v string) (uint, string, bool) {
 	return uint(intVal), "please input a positive integer", err != nil
 }
 
+// since the move depends on the current game state
+// this function will return a closure instead
 func ValidateUserMovePrompt(v string) ([]uint, string, bool) {
 	targets := strings.Split(v, ",")
 	output := make([]uint, 2)
